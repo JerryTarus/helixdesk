@@ -1,35 +1,43 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// frontend/src/App.jsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HelixThemeProvider } from './theme/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './pages/Login';
+import { CircularProgress, Box } from '@mui/material';
+
+// Helper component for private routes
+const PrivateRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+      <CircularProgress color="secondary" />
+    </Box>
+  );
+  return user ? children : <Navigate to="/login" />;
+};
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <HelixThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            {/* We will build these next */}
+            <Route path="/dashboard" element={
+              <PrivateRoute>
+                <Box p={5}><h1>Dashboard Coming Next (Role-Based)</h1></Box>
+              </PrivateRoute>
+            } />
+
+            <Route path="/" element={<Navigate to="/login" />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </HelixThemeProvider>
+  );
 }
 
-export default App
+export default App;
