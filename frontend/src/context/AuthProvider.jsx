@@ -1,30 +1,30 @@
-// frontend/src/context/AuthContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
+// frontend/src/context/AuthProvider.jsx
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
-
-const AuthContext = createContext(null);
+import { AuthContext } from './AuthContext';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const checkAuth = async () => {
-    try {
-      const response = await api.get('/auth/me');
-      setUser(response.data);
-    } catch (error) {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+const checkAuth = useCallback(async () => {
+  try {
+    const response = await api.get('/auth/me');
+    console.log("Auth Check Success:", response.data); // Add this log
+    setUser(response.data);
+  } catch (err) {
+    console.error("Auth Check Failed:", err.response?.data || err.message); // Add this log
+    setUser(null);
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   const loginWithGoogle = () => {
-    // Direct browser to backend OAuth endpoint
     window.location.href = 'http://localhost:5000/api/auth/google';
   };
 
@@ -33,8 +33,8 @@ export const AuthProvider = ({ children }) => {
       await api.post('/auth/logout');
       setUser(null);
       window.location.href = '/login';
-    } catch (error) {
-      console.error('Logout failed', error);
+    } catch (err) {
+      console.error('Logout failed', err);
     }
   };
 
@@ -44,5 +44,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);

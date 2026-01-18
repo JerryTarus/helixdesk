@@ -1,24 +1,19 @@
 // backend/src/middlewares/authMiddleware.js
-
 const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
   const token = req.cookies.accessToken;
 
-  if (!token) return res.status(401).json({ message: 'Session expired. Please login.' });
+  if (!token) return res.status(401).json({ message: "No token, authorization denied" });
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(403).json({ message: 'Invalid session' });
-    req.user = decoded;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//    This must match what your controller expects (req.user.id)
+    req.user = decoded; 
     next();
-  });
+  } catch (err) {
+    res.status(401).json({ message: "Token is not valid" });
+  }
 };
 
-const verifyAdmin = (req, res, next) => {
-  verifyToken(req, res, () => {
-    if (req.user.role === 'ADMIN') return next();
-    res.status(403).json({ message: "Forbidden: Admin access required" });
-  });
-};
-
-module.exports = { verifyToken, verifyAdmin };
+module.exports = { verifyToken };

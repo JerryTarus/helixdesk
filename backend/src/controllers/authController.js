@@ -47,19 +47,28 @@ exports.logout = (req, res) => {
   res.status(200).json({ message: 'Logged out successfully' });
 };
 
+// backend/src/controllers/authController.js
 exports.getMe = async (req, res) => {
   try {
+    // We use req.user.id which was set by the verifyToken middleware
+    const userId = req.user.id || req.user.sub; // Handle both standard and Google IDs
+
     const result = await db.query(
-      'SELECT id, full_name, email, role, avatar_url, is_2fa_enabled FROM users WHERE id = $1',
-      [req.user.id]
+      'SELECT id, full_name, email, role, avatar_url FROM users WHERE id = $1',
+      [userId]
     );
-    if (result.rows.length === 0) return res.status(404).json({ message: 'User not found' });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User session not found in database' });
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    // This will print the EXACT error in your backend terminal
+    console.error("DATABASE_ERROR_IN_GETME:", err.message);
+    res.status(500).json({ message: 'Internal Server Error', error: err.message });
   }
 };
-
 exports.refreshToken = async (req, res) => {
   // Read from cookie instead of body
   const token = req.cookies.refreshToken;
