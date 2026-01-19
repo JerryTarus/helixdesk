@@ -52,6 +52,8 @@ app.use((err, req, res, next) => {
   });
 });
 
+app.use('/uploads', express.static('uploads'));
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`\n HelixDesk Server running on port ${PORT}`);

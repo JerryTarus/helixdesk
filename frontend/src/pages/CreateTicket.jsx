@@ -1,123 +1,168 @@
+// frontend/src/pages/CreateTicket.jsx
 import React, { useState } from 'react';
-import { 
-  Box, Container, Typography, TextField, Button, Grid, Paper, 
-  MenuItem, Stepper, Step, StepLabel, Breadcrumbs, Link
+import {
+  Box,
+  Container,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  MenuItem,
+  Stack
 } from '@mui/material';
-import { Send, Save, Cancel, Info } from '@mui/icons-material';
-import api from '../api/axios';
+import { CloudUpload, Send } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/axios';
+import PageTransition from '../components/PageTransition';
+import toast from 'react-hot-toast'; // Added toast import
 
 const CreateTicket = () => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     subject: '',
     description: '',
-    priority: 'MEDIUM',
-    department: 'Information Technology',
-    category: 'Software Bug'
+    priority: 'LOW',
+    department: 'IT'
   });
 
-const handleSubmit = async () => {
-  try {
-    await api.post('/tickets', formData);
-    navigate('/dashboard');
-  } catch (err) {
-    console.error('Error creating ticket:', err);
-    alert('Error creating ticket');
-  }
-};
+  const [file, setFile] = useState(null);
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // MUST use FormData for file uploads
+    const data = new FormData();
+    data.append('subject', formData.subject);
+    data.append('description', formData.description);
+    data.append('priority', formData.priority);
+    data.append('department', formData.department);
+
+    if (file) data.append('attachment', file);
+
+    try {
+      await api.post('/tickets', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      // Success Toast
+      toast.success('Ticket submitted successfully! Our team is on it.', {
+        duration: 4000,
+        style: { 
+          borderRadius: '10px', 
+          background: '#333', 
+          color: '#fff' 
+        }
+      });
+
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Ticket creation failed:', err);
+      // Error Toast
+      toast.error('Could not submit ticket. Please check your file size.');
+    }
+  };
 
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: 4 }}>
-      <Container maxWidth="lg">
-        <Breadcrumbs sx={{ mb: 2 }}>
-          <Link underline="hover" color="inherit" href="/dashboard">Helpdesk</Link>
-          <Typography color="text.primary" fontWeight={700}>Create New Ticket</Typography>
-        </Breadcrumbs>
+    <PageTransition>
+      <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: 8 }}>
+        <Container maxWidth="sm">
+          <Paper
+            sx={{
+              p: 4,
+              borderRadius: 4,
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: 'none'
+            }}
+          >
+            <Typography variant="h5" fontWeight={900} mb={3}>
+              Submit Support Request
+            </Typography>
 
-        <Typography variant="h3" fontWeight={900} gutterBottom>Create New Ticket</Typography>
-        <Typography color="text.secondary" sx={{ mb: 4 }}>Initialize a support request. Ensure all required fields are filled to meet SLA targets.</Typography>
+            <form onSubmit={handleSubmit} encType="multipart/form-data">
+              <Stack spacing={3}>
+                <TextField
+                  label="Subject"
+                  fullWidth
+                  required
+                  value={formData.subject}
+                  onChange={(e) =>
+                    setFormData({ ...formData, subject: e.target.value })
+                  }
+                />
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={3}>
-            <Paper sx={{ p: 3, borderRadius: 3 }}>
-              <Stepper orientation="vertical" activeStep={1}>
-                <Step><StepLabel>Ticket Details</StepLabel></Step>
-                <Step><StepLabel>Classification</StepLabel></Step>
-                <Step><StepLabel>Attachments</StepLabel></Step>
-              </Stepper>
-              <Box sx={{ mt: 4, p: 2, bgcolor: 'warning.main', borderRadius: 2, color: 'white' }}>
-                <Typography variant="caption" fontWeight={900} display="flex" alignItems="center" gap={1}>
-                  <Info fontSize="small" /> SLA NOTICE
-                </Typography>
-                <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-                  Urgent (P1) tickets trigger a 2-hour response window.
-                </Typography>
-              </Box>
-            </Paper>
-          </Grid>
+                <TextField
+                  label="Department"
+                  select
+                  fullWidth
+                  value={formData.department}
+                  onChange={(e) =>
+                    setFormData({ ...formData, department: e.target.value })
+                  }
+                >
+                  <MenuItem value="IT">IT Support</MenuItem>
+                  <MenuItem value="HR">Human Resources</MenuItem>
+                  <MenuItem value="Finance">Finance</MenuItem>
+                </TextField>
 
-          <Grid item xs={12} md={9}>
-            <Paper sx={{ p: 4, borderRadius: 3 }}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <TextField 
-                    select fullWidth label="Department" 
-                    value={formData.department}
-                    onChange={(e) => setFormData({...formData, department: e.target.value})}
-                  >
-                    <MenuItem value="Information Technology">Information Technology</MenuItem>
-                    <MenuItem value="Human Resources">Human Resources</MenuItem>
-                  </TextField>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField 
-                    select fullWidth label="Priority" 
-                    value={formData.priority}
-                    onChange={(e) => setFormData({...formData, priority: e.target.value})}
-                  >
-                    <MenuItem value="LOW">P4 - Low</MenuItem>
-                    <MenuItem value="MEDIUM">P3 - Medium</MenuItem>
-                    <MenuItem value="HIGH">P2 - High</MenuItem>
-                    <MenuItem value="URGENT">P1 - Urgent</MenuItem>
-                  </TextField>
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField 
-                    fullWidth label="Subject Line" 
-                    placeholder="Brief summary..."
-                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                <TextField
+                  label="Priority"
+                  select
+                  fullWidth
+                  value={formData.priority}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priority: e.target.value })
+                  }
+                >
+                  <MenuItem value="LOW">Low</MenuItem>
+                  <MenuItem value="MEDIUM">Medium</MenuItem>
+                  <MenuItem value="HIGH">High</MenuItem>
+                  <MenuItem value="URGENT">Urgent</MenuItem>
+                </TextField>
+
+                <TextField
+                  label="Description"
+                  multiline
+                  rows={4}
+                  fullWidth
+                  required
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                />
+
+                <Button
+                  component="label"
+                  variant="outlined"
+                  startIcon={<CloudUpload />}
+                  sx={{ py: 1.5, borderStyle: 'dashed', fontWeight: 700 }}
+                >
+                  {file ? file.name : 'Upload Screenshot (Optional)'}
+                  <input
+                    type="file"
+                    hidden
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField 
-                    fullWidth multiline rows={6} label="Detailed Description" 
-                    placeholder="Describe the steps to reproduce..."
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  />
-                </Grid>
-              </Grid>
+                </Button>
 
-              <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>
-                <Button startIcon={<Cancel />} color="inherit">Discard</Button>
-                <Box gap={2} display="flex">
-                  <Button startIcon={<Save />} variant="outlined">Save Draft</Button>
-                  <Button 
-                    startIcon={<Send />} 
-                    variant="contained" 
-                    color="secondary"
-                    onClick={handleSubmit}
-                  >
-                    Submit Ticket
-                  </Button>
-                </Box>
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="secondary"
+                  size="large"
+                  startIcon={<Send />}
+                  sx={{ fontWeight: 900 }}
+                >
+                  Submit Ticket
+                </Button>
+              </Stack>
+            </form>
+          </Paper>
+        </Container>
+      </Box>
+    </PageTransition>
   );
 };
 

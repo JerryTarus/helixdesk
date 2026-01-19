@@ -2,10 +2,10 @@ import React from 'react';
 import { useAuth } from '../context/useAuth';
 import { Box, CircularProgress } from '@mui/material';
 
-// These components are the actual screens
-import UserPortal from './UserPortal'; 
-import AgentDashboard from './AgentDashboard';
+// IMPORTANT: Ensure these files exist in your /pages folder
 import AdminAnalytics from './AdminAnalytics';
+import AgentDashboard from './AgentDashboard';
+import UserPortal from './UserPortal';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -18,15 +18,19 @@ const Dashboard = () => {
     );
   }
 
-  // Check the role from the database and show the correct UI
-  switch (user?.role) {
-    case 'ADMIN':
-      return <AdminAnalytics />;
-    case 'AGENT':
-      return <AgentDashboard />;
-    default:
-      // New Google sign-ups default to 'END_USER'
-      return <UserPortal />;
+  // LOGGING: Check your browser console (F12) to see what this prints!
+  console.log("Current User Role:", user?.role);
+
+  // Normalizing the role to upper case to prevent 'Admin' vs 'ADMIN' errors
+  const role = user?.role?.toUpperCase();
+
+  if (role === 'ADMIN') {
+    return <AdminAnalytics />;
+  } else if (role === 'AGENT') {
+    return <AgentDashboard />;
+  } else {
+    // Default to User Portal for 'END_USER' or if role is undefined
+    return <UserPortal />;
   }
 };
 

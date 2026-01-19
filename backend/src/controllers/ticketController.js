@@ -3,18 +3,23 @@ const db = require('../config/db');
 exports.createTicket = async (req, res) => {
   const { subject, description, priority, department, category } = req.body;
   const requester_id = req.user.id;
-  
-  // Generate a unique Ticket Key (e.g., TK-12345)
+
+  // 1. Get the file path if a file was uploaded
+  const attachment_url = req.file ? `/uploads/${req.file.filename}` : null;
+
+  // 2. Generate a unique Ticket Key
   const ticket_key = `TK-${Math.floor(10000 + Math.random() * 90000)}`;
 
   try {
+    // 3. Insert Ticket
     const result = await db.query(
-      `INSERT INTO tickets (ticket_key, requester_id, subject, description, priority, department, category) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [ticket_key, requester_id, subject, description, priority, department, category]
+      `INSERT INTO tickets 
+      (ticket_key, requester_id, subject, description, priority, department, category, attachment_url) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [ticket_key, requester_id, subject, description, priority, department, category, attachment_url]
     );
-    
-    // Log the event for Admin Analytics
+
+    // 4. Log the event for Admin Analytics
     await db.query(
       `INSERT INTO system_logs (event_type, user_id, status, details) 
        VALUES ('TICKET_CREATED', $1, 'SUCCESS', $2)`,
@@ -23,23 +28,23 @@ exports.createTicket = async (req, res) => {
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to create ticket' });
+    console.error("CREATE_TICKET_ERROR:", err);
+    res.status(500).json({ message: "Failed to create ticket" });
   }
 };
 
 exports.getMyTickets = async (req, res) => {
-    try {
-        const result = await db.query(
-            'SELECT * FROM tickets WHERE requester_id = $1 ORDER BY created_at DESC',
-            [req.user.id]
-        );
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ message: 'Server error' });
-    }
+  try {
+    const result = await db.query(
+      'SELECT * FROM tickets WHERE requester_id = $1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("GET_MY_TICKETS_ERROR:", err);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
-
 
 exports.getTicketDetails = async (req, res) => {
   const { id } = req.params;
@@ -67,6 +72,7 @@ exports.getTicketDetails = async (req, res) => {
 
     res.json(ticket);
   } catch (err) {
+    console.error("GET_DETAILS_ERROR:", err);
     res.status(500).json({ message: 'Error fetching details' });
   }
 };
@@ -83,6 +89,7 @@ exports.addMessage = async (req, res) => {
     );
     res.status(201).json({ message: 'Message added' });
   } catch (err) {
+    console.error("ADD_MESSAGE_ERROR:", err);
     res.status(500).json({ message: 'Error sending message' });
   }
 };

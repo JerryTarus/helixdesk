@@ -1,59 +1,58 @@
 import React from 'react';
-import { Box, Container, Typography, Button, Stack, Grid, Paper } from '@mui/material';
+import { Box, Container, Typography, Button, Stack, Grid, Paper, AppBar, Toolbar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { Layers, Speed, Shield, AutoGraph } from '@mui/icons-material';
+import { motion } from 'framer-motion';
+import { Shield, Speed, Group, ArrowForward, Layers } from '@mui/icons-material';
 
 const Landing = () => {
   const navigate = useNavigate();
 
   return (
-    <Box sx={{ bgcolor: 'white', minHeight: '100vh' }}>
-      {/* Navbar */}
-      <Container maxWidth="lg" sx={{ py: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Box sx={{ bgcolor: 'primary.main', p: 0.5, borderRadius: 1 }}><Layers sx={{ color: 'white' }} /></Box>
-          <Typography variant="h6" fontWeight={900} letterSpacing={-1}>HELIXDESK</Typography>
-        </Stack>
-        <Button onClick={() => navigate('/login')} variant="contained" color="secondary" sx={{ borderRadius: 2, fontWeight: 700 }}>
-          Sign In
-        </Button>
-      </Container>
+    <Box sx={{ bgcolor: '#F8FAFC', minHeight: '100vh' }}>
+      {/* Navigation */}
+      <AppBar position="static" elevation={0} sx={{ bgcolor: 'white', borderBottom: '1px solid #E2E8F0' }}>
+        <Container maxWidth="lg">
+          <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Box sx={{ bgcolor: '#0D9488', p: 0.5, borderRadius: 1.5, display: 'flex' }}>
+                <Layers sx={{ color: 'white' }} />
+              </Box>
+              <Typography variant="h6" fontWeight={900} color="#1E293B">HelixDesk</Typography>
+            </Stack>
+            <Stack direction="row" spacing={3} sx={{ display: { xs: 'none', md: 'flex' } }}>
+              {['Features', 'Roles', 'Enterprise Security'].map((item) => (
+                <Typography key={item} variant="body2" fontWeight={600} color="#64748B" sx={{ cursor: 'pointer' }}>{item}</Typography>
+              ))}
+            </Stack>
+            <Button variant="contained" onClick={() => navigate('/login')} sx={{ bgcolor: '#1E293B', fontWeight: 700, px: 3, borderRadius: 2 }}>Log In</Button>
+          </Toolbar>
+        </Container>
+      </AppBar>
 
       {/* Hero Section */}
-      <Container maxWidth="md" sx={{ py: 15, textAlign: 'center' }}>
-        <Typography variant="h1" fontWeight={900} sx={{ fontSize: { xs: '3rem', md: '5rem' }, mb: 3, letterSpacing: -2 }}>
-          Modern Helpdesk for <span style={{ color: '#0D9488' }}>Enterprise</span>
-        </Typography>
-        <Typography variant="h5" color="text.secondary" sx={{ mb: 6, lineHeight: 1.6 }}>
-          A Dissertation Project exploring high-performance support architectures, 
-          SLA-driven workflows, and role-based security.
-        </Typography>
-        <Stack direction="row" spacing={2} justifyContent="center">
-          <Button onClick={() => navigate('/login')} size="large" variant="contained" color="primary" sx={{ px: 6, py: 2, borderRadius: 3, fontWeight: 900 }}>
-            Get Started
-          </Button>
-          <Button size="large" variant="outlined" color="inherit" sx={{ px: 6, py: 2, borderRadius: 3, fontWeight: 900 }}>
-            View Thesis
-          </Button>
-        </Stack>
-      </Container>
-
-      {/* Features */}
-      <Container maxWidth="lg" sx={{ pb: 15 }}>
-        <Grid container spacing={4}>
-          {[
-            { icon: <Speed color="secondary" />, title: 'SLA Engine', desc: 'Automated priority tracking and breach alerts.' },
-            { icon: <Shield color="secondary" />, title: 'Enterprise Auth', desc: 'Secure Google OAuth2 with HttpOnly sessions.' },
-            { icon: <AutoGraph color="secondary" />, title: 'Real-time Analytics', desc: 'Deep insights into agent performance.' }
-          ].map((f, i) => (
-            <Grid item xs={12} md={4} key={i}>
-              <Paper sx={{ p: 4, borderRadius: 4, border: '1px solid #eee', boxShadow: 'none' }}>
-                <Box sx={{ mb: 2 }}>{f.icon}</Box>
-                <Typography variant="h6" fontWeight={800} gutterBottom>{f.title}</Typography>
-                <Typography variant="body2" color="text.secondary">{f.desc}</Typography>
-              </Paper>
-            </Grid>
-          ))}
+      <Container maxWidth="lg" sx={{ pt: 12, pb: 15 }}>
+        <Grid container spacing={6} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}>
+              <Typography variant="overline" sx={{ color: '#0D9488', fontWeight: 900, letterSpacing: 1.5 }}>ENTERPRISE READY</Typography>
+              <Typography variant="h1" sx={{ fontSize: '4rem', fontWeight: 900, lineHeight: 1.1, mb: 3, color: '#0F172A' }}>
+                Streamline Support with HelixDesk
+              </Typography>
+              <Typography variant="h6" sx={{ color: '#64748B', mb: 5, fontWeight: 400, lineHeight: 1.6 }}>
+                An intelligent, secure, and scalable helpdesk solution designed for modern enterprise workflows and high-performance teams.
+              </Typography>
+              <Stack direction="row" spacing={2}>
+                <Button variant="contained" size="large" onClick={() => navigate('/login')} endIcon={<ArrowForward />} sx={{ bgcolor: '#0D9488', px: 4, py: 1.5, borderRadius: 2, fontWeight: 700 }}>Request Demo</Button>
+                <Button variant="outlined" size="large" sx={{ borderColor: '#E2E8F0', color: '#1E293B', px: 4, py: 1.5, borderRadius: 2, fontWeight: 700 }}>View Documentation</Button>
+              </Stack>
+            </motion.div>
+          </Grid>
+          <Grid item xs={12} md={6}>
+             {/* Abstract Dashboard Graphic */}
+             <Paper elevation={20} sx={{ p: 2, borderRadius: 4, bgcolor: '#F1F5F9', border: '8px solid white' }}>
+                <Box sx={{ height: 300, bgcolor: 'white', borderRadius: 2 }} />
+             </Paper>
+          </Grid>
         </Grid>
       </Container>
     </Box>
