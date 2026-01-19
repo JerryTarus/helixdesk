@@ -4,14 +4,17 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { HelixThemeProvider } from './theme/HelixThemeProvider';
 import { AuthProvider } from './context/AuthProvider';
 import { useAuth } from './context/useAuth';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
 import { CircularProgress, Box } from '@mui/material';
+import { Toaster } from 'react-hot-toast';
+
+// Page Imports
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard'; // This contains the logic you want
 import AuthSuccess from './pages/AuthSuccess';
 import Landing from './pages/Landing';
-import { Toaster } from 'react-hot-toast';
 import VerifyOTP from './pages/VerifyOTP';
 import SystemLogs from './pages/SystemLogs';
+import AgentTicketWorkspace from './pages/AgentTicketWorkspace'; // New
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -34,22 +37,42 @@ function App() {
         <Toaster position="top-right" reverseOrder={false} />
         <Router>
           <Routes>
-            <Route path="/admin/logs" element={<PrivateRoute><SystemLogs /></PrivateRoute>} />
-            <Route path="/verify-otp" element={<VerifyOTP />} />
+            {/* Public Routes */}
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/verify-otp" element={<VerifyOTP />} />
             <Route path="/auth/success" element={<AuthSuccess />} />
 
-            <Route
-              path="/dashboard"
+            {/* Protected Routes */}
+            <Route 
+              path="/dashboard" 
               element={
                 <PrivateRoute>
-                  <Box p={5}>
-                    <h1>Dashboard Coming Next (Role-Based)</h1>
-                  </Box>
+                  <Dashboard /> 
                 </PrivateRoute>
-              }
+              } 
             />
+            
+            <Route 
+              path="/admin/logs" 
+              element={
+                <PrivateRoute>
+                  <SystemLogs />
+                </PrivateRoute>
+              } 
+            />
+
+            <Route 
+              path="/agent/ticket/:id" 
+              element={
+                <PrivateRoute>
+                  <AgentTicketWorkspace />
+                </PrivateRoute>
+              } 
+            />
+
+            {/* Catch-all redirect */}
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Router>
       </AuthProvider>

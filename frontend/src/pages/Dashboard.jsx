@@ -1,8 +1,8 @@
 import React from 'react';
 import { useAuth } from '../context/useAuth';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material';
 
-// IMPORTANT: Ensure these files exist in your /pages folder
+// Import the specific dashboards we built
 import AdminAnalytics from './AdminAnalytics';
 import AgentDashboard from './AgentDashboard';
 import UserPortal from './UserPortal';
@@ -10,27 +10,40 @@ import UserPortal from './UserPortal';
 const Dashboard = () => {
   const { user, loading } = useAuth();
 
+  // 1. Show a professional loader while fetching the session
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <CircularProgress color="secondary" />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#F8FAFC' }}>
+        <CircularProgress sx={{ color: '#0D9488' }} />
       </Box>
     );
   }
 
-  // LOGGING: Check your browser console (F12) to see what this prints!
-  console.log("Current User Role:", user?.role);
+  // 2. If no user is found after loading, the session failed
+  if (!user) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="h6" color="error">Session Error: User not authenticated.</Typography>
+        <Typography variant="body2">Please try logging in again via the portal.</Typography>
+      </Box>
+    );
+  }
 
-  // Normalizing the role to upper case to prevent 'Admin' vs 'ADMIN' errors
-  const role = user?.role?.toUpperCase();
+  // 3. Normalize the role from the Database
+  const role = user.role?.toUpperCase();
 
-  if (role === 'ADMIN') {
-    return <AdminAnalytics />;
-  } else if (role === 'AGENT') {
-    return <AgentDashboard />;
-  } else {
-    // Default to User Portal for 'END_USER' or if role is undefined
-    return <UserPortal />;
+  // 4. Role-Based Rendering Logic
+  switch (role) {
+    case 'ADMIN':
+      return <AdminAnalytics />;
+    case 'AGENT':
+      return <AgentDashboard />;
+    case 'END_USER':
+    case 'USER':
+      return <UserPortal />;
+    default:
+      // Fallback for dissertation safety
+      return <UserPortal />;
   }
 };
 

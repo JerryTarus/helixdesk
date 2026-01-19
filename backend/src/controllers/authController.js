@@ -193,29 +193,20 @@ exports.updateUserRole = async (req, res) => {
   }
 };
 
-// === Admin: Get Analytics Stats (FINAL VERSION) ===
+// === Admin: Get Analytics Stats with Monthly Trends ===
 exports.getAdminStats = async (req, res) => {
   try {
     if (req.user.role !== 'ADMIN') return res.status(403).json({ message: 'Unauthorized' });
 
+    // 1. Basic KPIs
     const totalTickets = await db.query('SELECT COUNT(*)::int AS count FROM tickets');
-    const activeAgents = await db.query("SELECT COUNT(*)::int AS count FROM users WHERE role = 'AGENT'");
-
-    // Avg resolution time in seconds
-    const avgRes = await db.query(`
-      SELECT AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))) AS avg_seconds
-      FROM tickets 
-      WHERE status = 'RESOLVED' AND resolved_at IS NOT NULL
-    `);
-
-    // SLA compliance percentage
     const sla = await db.query(`
-      SELECT 
-        (COUNT(CASE WHEN NOW() <= due_date THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)) AS compliance
+      SELECT (COUNT(CASE WHEN NOW() <= due_date THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)) AS compliance 
       FROM tickets
     `);
+    const activeAgents = await db.query("SELECT COUNT(*)::int AS count FROM users WHERE role = 'AGENT'");
 
-    // Department load
+    // 2. Department Load
     const deptLoad = await db.query(`
       SELECT department, COUNT(*) as count, 
       ROUND(COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM tickets), 0), 1) as percentage
@@ -223,21 +214,27 @@ exports.getAdminStats = async (req, res) => {
       GROUP BY department
     `);
 
-    // Format resolution time as "Xh Ym"
-    let avgResolution = '4h 12m'; // Fallback baseline
-    if (avgRes.rows[0].avg_seconds) {
-      const totalSeconds = Math.floor(avgRes.rows[0].avg_seconds);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      avgResolution = `${hours}h ${minutes}m`;
-    }
+    // 3. REAL DATA: Monthly Trends (Last 6 Months)
+    const monthlyTrends = await db.query(`
+      SELECT 
+        TO_CHAR(month, 'Mon') as month_name,
+        COALESCE(COUNT(t.id), 0) as incoming
+      FROM generate_series(
+        DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '5 months', 
+        DATE_TRUNC('month', CURRENT_DATE), 
+        '1 month'::interval
+      ) AS month
+      LEFT JOIN tickets t ON DATE_TRUNC('month', t.created_at) = month
+      GROUP BY month
+      ORDER BY month ASC
+    `);
 
     res.json({
       ticketVolume: totalTickets.rows[0].count,
-      avgResolution,
-      slaCompliance: parseFloat(sla.rows[0].compliance || 94.2).toFixed(1),
-      activeAgents: activeAgents.rows[0].count || 18,
-      departments: deptLoad.rows
+      slaCompliance: parseFloat(sla.rows[0].compliance || 100).toFixed(1),
+      activeAgents: activeAgents.rows[0].count,
+      departments: deptLoad.rows,
+      trends: monthlyTrends.rows // Array like [{ month_name: "Jan", incoming: 42 }, ...]
     });
   } catch (err) {
     console.error('ADMIN_STATS_ERROR:', err);
