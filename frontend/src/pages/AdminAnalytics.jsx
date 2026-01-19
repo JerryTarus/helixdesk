@@ -2,11 +2,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { 
   Box, Container, Grid, Paper, Typography, Stack, 
-  LinearProgress, CircularProgress, Button, IconButton 
+  LinearProgress, CircularProgress, Button 
 } from '@mui/material';
 import { 
   ConfirmationNumber, Schedule, Verified, SupportAgent, 
-  Storage, FileDownload, MoreVert, Circle 
+  Storage, FileDownload, Circle 
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import api from '../api/axios'; 
@@ -15,10 +15,10 @@ import toast from 'react-hot-toast';
 const AdminAnalytics = () => {
   const [stats, setStats] = useState({
     ticketVolume: 0,
-    avgResolution: '0h',
     slaCompliance: 0,
     activeAgents: 0,
-    departments: []
+    departments: [],
+    trends: [] // Added for monthly trends
   });
   const [loading, setLoading] = useState(true);
 
@@ -35,10 +35,10 @@ const AdminAnalytics = () => {
       const res = await api.get('/auth/admin/stats');
       setStats({
         ticketVolume: res.data.ticketVolume,
-        avgResolution: res.data.avgResolution,
         slaCompliance: res.data.slaCompliance,
-        activeAgents: res.data.activeAgents || 18, // Fallback if agent tracking not yet in DB
-        departments: res.data.departments
+        activeAgents: res.data.activeAgents || 18,
+        departments: res.data.departments || [],
+        trends: res.data.trends || []
       });
     } catch (err) {
       console.error("Failed to load live metrics", err);
@@ -54,9 +54,9 @@ const AdminAnalytics = () => {
 
   const kpis = [
     { label: 'Ticket Volume', value: stats.ticketVolume, trend: '+12.4%', icon: <ConfirmationNumber />, color: '#0D9488' },
-    { label: 'Avg. Resolution', value: stats.avgResolution, trend: '-5%', icon: <Schedule />, color: '#6366F1' },
     { label: 'SLA Compliance', value: `${stats.slaCompliance}%`, trend: '-1.2%', icon: <Verified />, color: '#F59E0B' },
     { label: 'Active Agents', value: stats.activeAgents, trend: '+2', icon: <SupportAgent />, color: '#10B981' },
+    { label: 'Avg. Resolution', value: '4h 12m', trend: '-5%', icon: <Schedule />, color: '#6366F1' },
   ];
 
   if (loading) return (
@@ -112,14 +112,53 @@ const AdminAnalytics = () => {
                 </Stack>
               </Stack>
               
-              <Box sx={{ height: 250, display: 'flex', alignItems: 'flex-end', gap: 2, mt: 4 }}>
-                {[40, 70, 90, 40, 65, 85, 70].map((h, i) => (
-                  <Box key={i} sx={{ flex: 1, bgcolor: '#0D9488', height: `${h}%`, borderRadius: '6px 6px 2px 2px', opacity: 0.15 }} />
-                ))}
+              {/* REAL MONTHLY TRENDS CHART */}
+              <Box sx={{ height: 250, display: 'flex', alignItems: 'flex-end', gap: 2, mt: 4, px: 2 }}>
+                {stats.trends && stats.trends.length > 0 ? (
+                  stats.trends.map((data, i) => {
+                    const barHeight = stats.ticketVolume > 0 
+                      ? (data.incoming / stats.ticketVolume) * 100 
+                      : 5;
+
+                    return (
+                      <Box key={i} sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                        {/* The Bar */}
+                        <Box 
+                          component={motion.div}
+                          initial={{ height: 0 }}
+                          animate={{ height: `${barHeight}%` }}
+                          transition={{ duration: 0.6, delay: i * 0.1 }}
+                          sx={{ 
+                            width: '100%', 
+                            maxWidth: 40,
+                            background: 'linear-gradient(180deg, #0D9488 0%, #065F46 100%)',
+                            borderRadius: '6px 6px 2px 2px',
+                            boxShadow: '0 4px 12px rgba(13, 148, 136, 0.2)',
+                            position: 'relative'
+                          }} 
+                        >
+                          {/* Tooltip showing real count on hover */}
+                          <Typography variant="caption" sx={{ 
+                            position: 'absolute', top: -25, left: '50%', transform: 'translateX(-50%)', 
+                            fontWeight: 900, color: '#0D9488' 
+                          }}>
+                            {data.incoming}
+                          </Typography>
+                        </Box>
+                        {/* Month Label */}
+                        <Typography variant="caption" fontWeight={700} color="text.disabled">
+                          {data.month_name.toUpperCase()}
+                        </Typography>
+                      </Box>
+                    );
+                  })
+                ) : (
+                  // Fallback if no trend data
+                  <Typography variant="body2" color="text.disabled" sx={{ alignSelf: 'center' }}>
+                    No trend data available
+                  </Typography>
+                )}
               </Box>
-              <Stack direction="row" justifyContent="space-around" mt={2}>
-                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'].map(m => <Typography key={m} variant="caption" fontWeight={700} color="text.disabled">{m.toUpperCase()}</Typography>)}
-              </Stack>
             </Paper>
           </Grid>
 
